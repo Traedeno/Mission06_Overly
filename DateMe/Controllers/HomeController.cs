@@ -22,7 +22,7 @@ namespace DateMe.Controllers
         [HttpGet]
         public IActionResult FIllOutApplication()
         {
-            return View("Application");
+            return View("Application", new App());
         }
         [HttpGet]
         public IActionResult AboutJoel()
@@ -33,14 +33,64 @@ namespace DateMe.Controllers
         [HttpPost]
         public IActionResult FIllOutApplication(App response)
         {
-            if (response.Lent == null) { response.Lent = ""; }
-            if (response.Note == null) { response.Note = ""; }
-            if (response.Edit == null) { response.Edit = false; }
+            if (response.LentTo == null) { response.LentTo = ""; }
+            if (response.Notes == null) { response.Notes = ""; }
+            if (response.Edited == null) { response.Edited = 0; }
 
-            _context.Applications.Add(response); // Add record to the database
+            if (ModelState.IsValid)
+            {
+                _context.Movies.Add(response); // Add record to the database
+                _context.SaveChanges();
+
+                return View("Confirmation", response);
+            }
+            else
+            {
+                return View("Application", response);
+            }
+        }
+
+        [HttpGet]
+        public IActionResult Waitlist()
+        {
+            //Linq
+            var applications = _context.Movies
+                .Where(x => x.Rating != "")
+                .OrderBy(x => x.Title).ToList();
+
+            return View("Waitlist", applications);
+        }
+
+        public IActionResult Edit(int id)
+        {
+            var recordToEdit = _context.Movies
+                .Single(x => x.MovieId == id);
+
+            return View("Application", recordToEdit); 
+        }
+        [HttpPost]
+        public IActionResult Edit(App updatedInfo)
+        {
+            _context.Update(updatedInfo);
             _context.SaveChanges();
 
-            return View("Confirmation", response);
+            return RedirectToAction("Waitlist");
+        }
+        [HttpGet]
+        public IActionResult Delete(int id)
+        {
+            var recordToDelete = _context.Movies
+                .Single(x => x.MovieId == id);
+
+            return View("Delete", recordToDelete);
+        }
+        [HttpPost]
+        public IActionResult Delete(App application)
+        {
+            _context.Movies.Remove(application);
+            _context.SaveChanges();
+
+            return RedirectToAction("Waitlist");
         }
     }
 }
